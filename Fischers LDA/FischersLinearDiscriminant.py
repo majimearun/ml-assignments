@@ -4,29 +4,51 @@ import numpy as np
 class GaussianDistribution:
     
     def __init__(self, mean: float, std: float):
+        """Gaussian distribution class
+        
+        Args:
+            mean (float): Mean of the distribution
+            std (float): Standard deviation of the distribution
+        """
         self.mean = mean
         self.std = std
         
     def find_probability(self, x):
+        """Find the probability of a point being in a distribution
+        
+        Args:
+            x (float): Point to find the probability of
+            
+        Returns:
+            float: Probability of the point being in the distribution
+        """
         return np.exp(-((x - self.mean) ** 2) / (2 * (self.std ** 2)))/(np.sqrt (2 * np.pi) * self.std)
 
 class FischersLinearDiscriminant:
     def __init__(self):
+        """Fischers Linear Discriminant Classifier
+        """
         self._w: np.ndarray = None
         self._class1_prior: float = 0
         self._class2_prior: float = 0
         self._class1_gaussian: GaussianDistribution = None
         self._class2_gaussian: GaussianDistribution = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+        """Finds the line onto which the data can be projected to maximise the separation between the two classes and minimises the variance within each class. Also finds and sets the priors and gaussian distributions for each class.
+        
+        Args:
+            X (np.ndarray): Data to fit the model to
+            y (np.ndarray): Labels for the data
+        """
         X_class1 = [X[i] for i in range(len(X)) if y[i] == 1]
         X_class2 = [X[i] for i in range(len(X)) if y[i] == -1]
 
         class1_mean = np.mean(X_class1, axis=0)
         class2_mean = np.mean(X_class2, axis=0)
         
-        s1_squared = np.mean([(x-class1_mean).reshape(-1, 1) @ (x - class1_mean).reshape(1, -1) for x in X_class1], axis=0)
-        s2_squared = np.mean([(x-class1_mean).reshape(-1, 1) @ (x - class1_mean).reshape(1, -1) for x in X_class2], axis=0)
+        s1_squared = np.mean([(x - class1_mean).reshape(-1, 1) @ (x - class1_mean).reshape(1, -1) for x in X_class1], axis=0)
+        s2_squared = np.mean([(x - class1_mean).reshape(-1, 1) @ (x - class1_mean).reshape(1, -1) for x in X_class2], axis=0)
         
         sw = s1_squared + s2_squared
         self._w = np.linalg.inv(sw) @ (class1_mean - class2_mean).reshape(-1, 1)
@@ -43,15 +65,39 @@ class FischersLinearDiscriminant:
         
         
     
-    def _project(self, x):
+    def _project(self, x) -> float:
+        """Projects a point onto the line (discriminant) found by the fit method
+        
+        Args:
+            x (np.ndarray): Point to project onto the line
+            
+        Returns:
+            float: Projection of the point onto the line
+        """
         return x @ self._w
         
         
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predicts the classes of a set of points
+        
+        Args:
+            X (np.ndarray): Points to predict the classes of
+            
+        Returns:
+            np.ndarray: Predicted classes of the points (1D array)
+        """
         return np.array([self._classify(x) for x in X])
         
     
-    def _classify(self, x: np.ndarray) -> np.ndarray:
+    def _classify(self, x: np.ndarray) -> int:
+        """Classifies a point as either class 1 or class -1
+        
+        Args:
+            x (np.ndarray): Point to classify
+            
+        Returns:
+            int: Class of the point
+        """
         decision = np.log(self._class1_prior) - np.log(self._class2_prior) + np.log(self._class1_gaussian.find_probability(x @ self._w)) - np.log(self._class2_gaussian.find_probability(x @ self._w))
         if decision > 0:
             return 1
@@ -59,6 +105,22 @@ class FischersLinearDiscriminant:
             return -1
         
     
-    def score(self, X: np.ndarray, y: np.ndarray) -> float:
+    def score(self, X: np.ndarray, y: np.ndarray, _print: bool = False) -> tuple[float, float, float]:
+        """Scores the model by calculating and printing the accuracy, precision and recall on the given data
+        
+        Args:
+            X (np.ndarray): Data to score the model on
+            y (np.ndarray): Labels for the data
+            _print (bool, optional): Whether to print the scores. Defaults to False.
+            
+        Returns:
+            tuple[float, float, float]: Accuracy, precision and recall of the model
+        """
+        
         predicted = self.predict(X)
-        return np.sum(y == predicted)/len(y)
+        accuracy =  np.sum(y == predicted)/len(y)
+        precision = np.sum((y == 1) & (predicted == 1))/np.sum(predicted == 1)
+        recall = np.sum((y == 1) & (predicted == 1))/np.sum(y == 1)
+        if _print:
+            print(f"Accuracy: {accuracy*100},\nPrecision: {precision*100},\nRecall: {recall*100}")
+        return accuracy, precision, recall
