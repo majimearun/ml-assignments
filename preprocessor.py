@@ -10,7 +10,7 @@ class Preprocessor:
             label_column (str): Name of the column containing the labels
         """
         self.original_data = data.copy()
-        self.data = data
+        self.data = data.copy()
         self.label_column = label_column    
     
     def _drop_rows(self, rows: list[int]):

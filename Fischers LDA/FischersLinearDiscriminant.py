@@ -105,8 +105,8 @@ class FischersLinearDiscriminant:
             return -1
         
     
-    def score(self, X: np.ndarray, y: np.ndarray, _print: bool = False) -> tuple[float, float, float]:
-        """Scores the model by calculating and printing the accuracy, precision and recall on the given data
+    def score(self, X: np.ndarray, y: np.ndarray, _print: bool = False) -> tuple[float, float, float, float]:
+        """Scores the model by calculating and printing the accuracy, precisions and recalls on the given data
         
         Args:
             X (np.ndarray): Data to score the model on
@@ -114,13 +114,25 @@ class FischersLinearDiscriminant:
             _print (bool, optional): Whether to print the scores. Defaults to False.
             
         Returns:
-            tuple[float, float, float]: Accuracy, precision and recall of the model
+            tuple[float, float, float, float]: True positives, true negatives, false positives and false negatives
         """
         
         predicted = self.predict(X)
-        accuracy =  np.sum(y == predicted)/len(y)
-        precision = np.sum((y == 1) & (predicted == 1))/np.sum(predicted == 1)
-        recall = np.sum((y == 1) & (predicted == 1))/np.sum(y == 1)
+        true_positives = np.sum([1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == 1])
+        true_negatives = np.sum([1 for i in range(len(predicted)) if predicted[i] == -1 and y[i] == -1])
+        false_positives = np.sum([1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == -1])
+        false_negatives = np.sum([1 for i in range(len(predicted)) if predicted[i] == -1 and y[i] == 1])
+        
         if _print:
-            print(f"Accuracy: {accuracy*100},\nPrecision: {precision*100},\nRecall: {recall*100}")
-        return accuracy, precision, recall
+            print("--------Results--------")
+            print(f"Accuracy: {(true_positives + true_negatives)/len(predicted)}")
+            print("----Class 1----")
+            print(f"Precision: {true_positives/(true_positives + false_positives)}")
+            print(f"Recall: {true_positives/(true_positives + false_negatives)}")
+            print("----Class -1----")
+            print(f"Precision: {true_negatives/(true_negatives + false_negatives)}")
+            print(f"Recall: {true_negatives/(true_negatives + false_positives)}")
+            
+        return true_positives, true_negatives, false_positives, false_negatives
+        
+        
