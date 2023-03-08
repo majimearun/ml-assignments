@@ -10,7 +10,7 @@ class Preprocessor:
             label_column (str): Name of the column containing the labels
         """
         self.original_data = data.copy()
-        self.data = data
+        self.data = data.copy()
         self.label_column = label_column    
     
     def _drop_rows(self, rows: list[int]):
@@ -69,8 +69,11 @@ class Preprocessor:
             if col != self.label_column:
                 self.data[col] = self._impute(self.data[col], impute_method)
         
-    def _label_encode(self) -> pd.Series:
+    def _label_encode(self, labels: list[int] = [-1, 1]) -> pd.Series:
         """Encodes the label column (two classes only: +1 and -1)
+        
+        Args:
+            labels (list[int], optional): A list of what you want the labels to be. Defaults to [0, 1]
         
         Returns:
             pd.Series: Encoded label column
@@ -78,8 +81,8 @@ class Preprocessor:
         col: pd.Series = self.data[self.label_column]
         encoded = col.astype("category").cat.codes
         transformation_dict = {
-            1: 1,
-            0: -1
+            0: labels[0],
+            1: labels[1]
         }
         return encoded.map(transformation_dict)
     
@@ -91,7 +94,7 @@ class Preprocessor:
         """
         return self.data[self.data.isna().any(axis=1)].index.tolist()
     
-    def preprocess(self, impute_method: str = "mean", drop_rows: list = [], drop_na: bool = True, standardize: bool = True) -> pd.DataFrame:
+    def preprocess(self, impute_method: str = "mean", drop_rows: list = [], drop_na: bool = True, standardize: bool = True, labels: list[int] = [0, 1]) -> pd.DataFrame:
         """Preprocesses the data
         
         Args:
@@ -110,7 +113,7 @@ class Preprocessor:
         self._impute_cols(impute_method)
         if standardize:
             self._standardize_cols()
-        self.data[self.label_column] = self._label_encode()
+        self.data[self.label_column] = self._label_encode(labels)
         return self.data.copy()
     
     def get_folds(self, k: int = 10) -> list[pd.DataFrame]:
