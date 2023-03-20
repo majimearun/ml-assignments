@@ -43,7 +43,7 @@ class FischersLinearDiscriminant:
             y (np.ndarray): Labels for the data
         """
         X_class1 = [X[i] for i in range(len(X)) if y[i] == 1]
-        X_class2 = [X[i] for i in range(len(X)) if y[i] == -1]
+        X_class2 = [X[i] for i in range(len(X)) if y[i] == 0]
         class1_mean = np.mean(X_class1, axis=0)
         class2_mean = np.mean(X_class2, axis=0)
 
@@ -101,7 +101,7 @@ class FischersLinearDiscriminant:
         return np.array([self._classify(x) for x in X])
 
     def _classify(self, x: np.ndarray) -> int:
-        """Classifies a point as either class 1 or class -1
+        """Classifies a point as either class 1 or class 0
 
         Args:
             x (np.ndarray): Point to classify
@@ -118,7 +118,7 @@ class FischersLinearDiscriminant:
         if decision > 0:
             return 1
         else:
-            return -1
+            return 0
 
     def score(
         self, X: np.ndarray, y: np.ndarray, _print: bool = False
@@ -139,13 +139,13 @@ class FischersLinearDiscriminant:
             [1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == 1]
         )
         true_negatives = np.sum(
-            [1 for i in range(len(predicted)) if predicted[i] == -1 and y[i] == -1]
+            [1 for i in range(len(predicted)) if predicted[i] == 0 and y[i] == 0]
         )
         false_positives = np.sum(
-            [1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == -1]
+            [1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == 0]
         )
         false_negatives = np.sum(
-            [1 for i in range(len(predicted)) if predicted[i] == -1 and y[i] == 1]
+            [1 for i in range(len(predicted)) if predicted[i] == 0 and y[i] == 1]
         )
 
         if _print:
@@ -154,7 +154,7 @@ class FischersLinearDiscriminant:
             print("----Class 1----")
             print(f"Precision: {true_positives/(true_positives + false_positives)}")
             print(f"Recall: {true_positives/(true_positives + false_negatives)}")
-            print("----Class -1----")
+            print("----Class 0----")
             print(f"Precision: {true_negatives/(true_negatives + false_negatives)}")
             print(f"Recall: {true_negatives/(true_negatives + false_positives)}")
 

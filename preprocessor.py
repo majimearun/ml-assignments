@@ -62,14 +62,17 @@ class Preprocessor:
         else:
             return col
 
-    def _impute_cols(self, impute_method: str):
+    def _impute_cols(self):
         """Imputes missing values in all columns except the label column"""
         for col in self.data.columns:
             if col != self.label_column:
-                self.data[col] = self._impute(self.data[col], impute_method)
+                if self.data[col].dtype == "object":
+                    self.data[col] = self._impute(self.data[col], "mode")
+                else:
+                    self.data[col] = self._impute(self.data[col], "mean")
 
-    def _label_encode(self, labels: list[int] = [-1, 1]) -> pd.Series:
-        """Encodes the label column (two classes only: +1 and -1)
+    def _label_encode(self, labels: list[int] = [0, 1]) -> pd.Series:
+        """Encodes the label column (two classes only: 0 and 1)
 
         Args:
             labels (list[int], optional): A list of what you want the labels to be. Defaults to [0, 1]
@@ -79,6 +82,10 @@ class Preprocessor:
         """
         col: pd.Series = self.data[self.label_column]
         encoded = col.astype("category").cat.codes
+        _decoder: dict[int, str] = dict(
+            enumerate(col.astype("category").cat.categories)
+        )
+        self._decoder = {labels[k]: v for k, v in _decoder.items()}
         transformation_dict = {0: labels[0], 1: labels[1]}
         return encoded.map(transformation_dict)
 
@@ -92,11 +99,10 @@ class Preprocessor:
 
     def preprocess(
         self,
-        impute_method: str = "mean",
         drop_rows: list = [],
         drop_na: bool = True,
         standardize: bool = True,
-        labels: list[int] = [-1, 1],
+        labels: list[int] = [0, 1],
     ) -> pd.DataFrame:
         """Preprocesses the data
 
@@ -113,7 +119,7 @@ class Preprocessor:
         if drop_na:
             drop_rows += self._get_rows_with_missing_values()
         self._drop_rows(drop_rows)
-        self._impute_cols(impute_method)
+        self._impute_cols()
         if standardize:
             self._standardize_cols()
         self.data[self.label_column] = self._label_encode(labels)
@@ -132,3 +138,14 @@ class Preprocessor:
         data = data.sample(frac=1).reset_index(drop=True)
         folds = np.array_split(data, k)
         return folds
+
+    def decode(self, labels: list[int]) -> list[str]:
+        """Decodes labels
+
+        Args:
+            labels (list[int]): List of labels to decode
+
+        Returns:
+            list[str]: List of decoded labels
+        """
+        return [self._decoder[label] for label in labels]

@@ -1,31 +1,68 @@
 import numpy as np
 
 
-class LogReg:
-    def __init__(self, threshold: float = 0.5):
+class Perceptron:
+    def __init__(self):
         self.w: np.ndarray = None
-        self.b: float = None
-        self.threshold: float = threshold
 
-    def fit(self, X: np.ndarray, y: np.ndarray, lr: float = 0.1, epochs: int = 1000):
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        inf_loop: bool = True,
+        epochs: int = 1000,
+        delta=0.05,
+        n_threshold=10,
+    ):
         """Fits the model to the given data
 
         Args:
             X (np.ndarray): Data to fit the model to
             y (np.ndarray): Labels for the data
-            lr (float, optional): Learning rate. Defaults to 0.1.
             epochs (int, optional): Number of epochs to train for. Defaults to 1000.
+
         """
 
         self.w = np.zeros(X.shape[1])
-        self.b = 0
+        n_accurate = 0
+        prev_n_accurate = 0
+        not_change_count = 0
+        if inf_loop:
+            while True:
+                for i in range(len(X)):
+                    x = X[i]
+                    if y[i] * (x @ self.w) <= 0:
+                        self.w += y[i] * x
+                    else:
+                        n_accurate += 1
+                if n_accurate == len(X):
+                    print("Breaking as learnt perfect decision boundary")
+                    break
+                if np.abs(n_accurate - prev_n_accurate) / len(X) < delta:
+                    not_change_count += 1
+                if not_change_count == n_threshold:
+                    print("Breaking as not improving")
+                    break
+                print(n_accurate / len(X))
+                n_accurate = 0
 
-        for _ in range(epochs):
-            for i in range(len(X)):
-                x = X[i]
-                y_hat = self._sigmoid(x @ self.w + self.b)
-                self.w -= lr * (y_hat - y[i]) * x
-                self.b -= lr * (y_hat - y[i])
+        else:
+            for _ in range(epochs):
+                for i in range(len(X)):
+                    x = X[i]
+                    if y[i] * (x @ self.w) <= 0:
+                        self.w += y[i] * x
+                    else:
+                        n_accurate += 1
+                if n_accurate == len(X):
+                    break
+                n_accurate = 0
+
+    def _classify(self, x: np.ndarray):
+        if x @ self.w > 0:
+            return 1
+        else:
+            return -1
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Predicts the labels for the given data
@@ -36,23 +73,7 @@ class LogReg:
         Returns:
             np.ndarray: Predicted labels
         """
-        return np.array(
-            [
-                1 if self._sigmoid(x @ self.w + self.b) >= self.threshold else 0
-                for x in X
-            ]
-        )
-
-    def _sigmoid(self, x: float) -> float:
-        """Sigmoid function
-
-        Args:
-            x (float): Input for sigmoid function
-
-        Returns:
-            float: sigmoid of the input
-        """
-        return 1 / (1 + np.exp(-x))
+        return [self._classify(x) for x in X]
 
     def score(
         self, X: np.ndarray, y: np.ndarray, _print: bool = False
@@ -73,13 +94,13 @@ class LogReg:
             [1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == 1]
         )
         true_negatives = np.sum(
-            [1 for i in range(len(predicted)) if predicted[i] == 0 and y[i] == 0]
+            [1 for i in range(len(predicted)) if predicted[i] == -1 and y[i] == -1]
         )
         false_positives = np.sum(
-            [1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == 0]
+            [1 for i in range(len(predicted)) if predicted[i] == 1 and y[i] == -1]
         )
         false_negatives = np.sum(
-            [1 for i in range(len(predicted)) if predicted[i] == 0 and y[i] == 1]
+            [1 for i in range(len(predicted)) if predicted[i] == -1 and y[i] == 1]
         )
 
         if _print:
