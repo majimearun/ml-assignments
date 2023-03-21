@@ -29,7 +29,7 @@ class GaussianDistribution:
 class FischersLinearDiscriminant:
     def __init__(self):
         """Fischers Linear Discriminant Classifier"""
-        self._w: np.ndarray = None
+        self.w: np.ndarray = None
         self._class1_prior: float = 0
         self._class2_prior: float = 0
         self._class1_gaussian: GaussianDistribution = None
@@ -63,7 +63,7 @@ class FischersLinearDiscriminant:
         )
 
         sw = s1_squared + s2_squared
-        self._w = np.linalg.inv(sw) @ (class1_mean - class2_mean).reshape(-1, 1)
+        self.w = np.linalg.inv(sw) @ (class1_mean - class2_mean).reshape(-1, 1)
 
         projected_class1 = np.array([self._project(x) for x in X_class1])
         projected_class2 = np.array([self._project(x) for x in X_class2])
@@ -87,7 +87,7 @@ class FischersLinearDiscriminant:
         Returns:
             float: Projection of the point onto the line
         """
-        return x @ self._w
+        return x @ self.w
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Predicts the classes of a set of points
@@ -112,8 +112,8 @@ class FischersLinearDiscriminant:
         decision = (
             np.log(self._class1_prior)
             - np.log(self._class2_prior)
-            + np.log(self._class1_gaussian.find_probability(x @ self._w))
-            - np.log(self._class2_gaussian.find_probability(x @ self._w))
+            + np.log(self._class1_gaussian.find_probability(x @ self.w))
+            - np.log(self._class2_gaussian.find_probability(x @ self.w))
         )
         if decision > 0:
             return 1

@@ -11,8 +11,8 @@ class Perceptron:
         y: np.ndarray,
         inf_loop: bool = True,
         epochs: int = 1000,
-        delta=0.05,
-        n_threshold=10,
+        delta=0.001,
+        n_threshold=100,
     ):
         """Fits the model to the given data
 
@@ -44,6 +44,7 @@ class Perceptron:
                     print("Breaking as not improving")
                     break
                 print(n_accurate / len(X))
+                prev_n_accurate = n_accurate
                 n_accurate = 0
 
         else:
