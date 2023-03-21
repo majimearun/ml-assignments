@@ -90,7 +90,7 @@ class Preprocessor:
             list[pd.DataFrame]: List of folds
         """
         data = self.data.copy()
-        data = data.sample(frac=1, random_state=42).reset_index(drop=True)
+        # data = data.sample(frac=1, random_state=42).reset_index(drop=True)
         folds = np.array_split(data, k)
         return folds
 

@@ -7,27 +7,82 @@ class LogReg:
         self.b: float = None
         self.threshold: float = threshold
 
-    def fit(self, X: np.ndarray, y: np.ndarray, lr: float = 0.1, epochs: int = 1000):
+    def loss(self, X: np.ndarray, y: np.ndarray) -> float:
+        return -1 * np.mean(
+            [
+                y[i] * np.log(self._sigmoid(X[i] @ self.w + self.b) + 1e-15)
+                + (1 - y[i]) * np.log(1 - self._sigmoid(X[i] @ self.w + self.b) + 1e-15)
+                for i in range(len(X))
+            ]
+        )
+
+    def fit(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        X_test: np.ndarray,
+        y_test: np.ndarray,
+        lr: float = 0.1,
+        epochs: int = 1000,
+        descent: str = "batch",
+        batch_size: int = 32,
+    ) -> tuple[list[float], list[float]]:
         """Fits the model to the given data
 
         Args:
-            X (np.ndarray): Data to fit the model to
-            y (np.ndarray): Labels for the data
+            X_train (np.ndarray): Data to fit the model to
+            y_train (np.ndarray): Labels for the data
+            X_test (np.ndarray): Data to test the model on
+            y_test (np.ndarray): Labels for the test data
             lr (float, optional): Learning rate. Defaults to 0.1.
             epochs (int, optional): Number of epochs to train for. Defaults to 1000.
+
+        Returns:
+            tuple[list[float], list[float]]: Training and test losses
         """
 
-        self.w = np.zeros(X.shape[1])
+        self.w = np.zeros(X_train.shape[1])
         self.b = 0
-
+        train_losses = []
+        test_losses = []
         for _ in range(epochs):
-            for i in range(len(X)):
-                x = X[i]
-                y_hat = self._sigmoid(x @ self.w + self.b)
-                self.w -= lr * (y_hat - y[i]) * x
-                self.b -= lr * (y_hat - y[i])
+            if descent == "batch":
+                dw = np.zeros(X_train.shape[1])
+                db = 0
+                for i in range(len(X_train)):
+                    x = X_train[i]
+                    y_hat = self._sigmoid(x @ self.w + self.b)
+                    dw += (y_hat - y_train[i]) * x
+                    db += y_hat - y_train[i]
+                self.w -= lr * dw / len(X_train)
+                self.b -= lr * db / len(X_train)
+            elif descent == "stochastic":
+                for i in range(len(X_train)):
+                    x = X_train[i]
+                    y_hat = self._sigmoid(x @ self.w + self.b)
+                    self.w -= lr * (y_hat - y_train[i]) * x
+                    self.b -= lr * (y_hat - y_train[i])
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+            elif descent == "mini-batch":
+                for i in range(0, len(X_train), batch_size):
+                    dw = np.zeros(X_train.shape[1])
+                    db = 0
+                    for j in range(i, i + batch_size):
+                        if j >= len(X_train):
+                            break
+                        x = X_train[j]
+                        y_hat = self._sigmoid(x @ self.w + self.b)
+                        dw += (y_hat - y_train[j]) * x
+                        db += y_hat - y_train[j]
+                    self.w -= lr * dw / batch_size
+                    self.b -= lr * db / batch_size
+
+            train_losses.append(self.loss(X_train, y_train))
+            test_losses.append(self.loss(X_test, y_test))
+
+        return train_losses, test_losses
+
+    def predict(self, X: np.ndarray, proba: bool = False) -> np.ndarray:
         """Predicts the labels for the given data
 
         Args:
@@ -36,12 +91,15 @@ class LogReg:
         Returns:
             np.ndarray: Predicted labels
         """
-        return np.array(
-            [
-                1 if self._sigmoid(x @ self.w + self.b) >= self.threshold else 0
-                for x in X
-            ]
-        )
+        if not proba:
+            return np.array(
+                [
+                    1 if self._sigmoid(x @ self.w + self.b) >= self.threshold else 0
+                    for x in X
+                ]
+            )
+        else:
+            return np.array([self._sigmoid(x @ self.w + self.b) for x in X])
 
     def _sigmoid(self, x: float) -> float:
         """Sigmoid function
