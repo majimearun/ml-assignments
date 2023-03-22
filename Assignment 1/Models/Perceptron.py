@@ -43,7 +43,6 @@ class Perceptron:
                 if not_change_count == n_threshold:
                     print("Breaking as not improving")
                     break
-                print(n_accurate / len(X))
                 prev_n_accurate = n_accurate
                 n_accurate = 0
 
