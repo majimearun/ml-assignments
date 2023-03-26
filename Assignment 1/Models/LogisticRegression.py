@@ -8,7 +8,7 @@ class LogReg:
         self.threshold: float = threshold
 
     def loss(self, X: np.ndarray, y: np.ndarray) -> float:
-        return -1 * np.mean(
+        return -1 * np.sum(
             [
                 y[i] * np.log(self._sigmoid(X[i] @ self.w + self.b) + 1e-15)
                 + (1 - y[i]) * np.log(1 - self._sigmoid(X[i] @ self.w + self.b) + 1e-15)

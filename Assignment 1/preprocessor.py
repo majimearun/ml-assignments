@@ -70,6 +70,7 @@ class Preprocessor:
         )
         self._decoder = {labels[k]: v for k, v in _decoder.items()}
         transformation_dict = {0: labels[0], 1: labels[1]}
+        print(self._decoder)
         return encoded.map(transformation_dict)
 
     def _get_rows_with_missing_values(self) -> list[int]:

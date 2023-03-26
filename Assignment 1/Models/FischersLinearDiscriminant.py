@@ -120,6 +120,47 @@ class FischersLinearDiscriminant:
         else:
             return 0
 
+    def solve(self):
+        a = 1 / (2 * self._class1_gaussian.std**2) - 1 / (
+            2 * self._class2_gaussian.std**2
+        )
+        b = self._class2_gaussian.mean / (
+            self._class2_gaussian.std**2
+        ) - self._class1_gaussian.mean / (self._class1_gaussian.std**2)
+        c = (
+            self._class1_gaussian.mean**2 / (2 * self._class1_gaussian.std**2)
+            - self._class2_gaussian.mean**2 / (2 * self._class2_gaussian.std**2)
+            - np.log(self._class1_gaussian.std / self._class2_gaussian.std)
+            + np.log(self._class1_prior / self._class2_prior)
+        )
+
+        return np.roots([a, b, c])
+
+    def plot_gaussians(self):
+        """Plots the gaussians for each class"""
+        import matplotlib.pyplot as plt
+
+        plot1 = np.random.normal(
+            self._class1_gaussian.mean,
+            self._class1_gaussian.std,
+            10000000,
+        )
+        plot2 = np.random.normal(
+            self._class2_gaussian.mean,
+            self._class2_gaussian.std,
+            10000000,
+        )
+        plt.hist(plot1, bins=100, alpha=0.5, label="Class M")
+        plt.hist(plot2, bins=100, alpha=0.5, label="Class B")
+        # show decision boundary point
+        plt.plot(
+            [self.solve()[1]] * 100,
+            np.linspace(0, 400000, 100),
+            "black",
+            label="Decision Boundary",
+        )
+        plt.legend(loc="upper right")
+
     def score(
         self, X: np.ndarray, y: np.ndarray, _print: bool = False
     ) -> tuple[float, float, float, float]:
