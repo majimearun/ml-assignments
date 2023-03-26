@@ -41,7 +41,7 @@ class LogReg:
             tuple[list[float], list[float]]: Training and test losses
         """
 
-        self.w = np.zeros(X_train.shape[1])
+        self.w = np.random.rand(X_train.shape[1])
         self.b = 0
         train_losses = []
         test_losses = []
