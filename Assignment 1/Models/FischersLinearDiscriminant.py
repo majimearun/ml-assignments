@@ -130,11 +130,24 @@ class FischersLinearDiscriminant:
         c = (
             self._class1_gaussian.mean**2 / (2 * self._class1_gaussian.std**2)
             - self._class2_gaussian.mean**2 / (2 * self._class2_gaussian.std**2)
-            - np.log(self._class1_gaussian.std / self._class2_gaussian.std)
-            + np.log(self._class1_prior / self._class2_prior)
+            - np.log(
+                (self._class2_gaussian.std * self._class1_prior)
+                / (self._class1_gaussian.std * self._class2_prior)
+            )
         )
+        roots = np.roots([a, b, c])
+        dist1 = np.abs(roots[0] - self._class1_gaussian.mean) + np.abs(
+            roots[0] - self._class2_gaussian.mean
+        )
+        dist2 = np.abs(roots[1] - self._class1_gaussian.mean) + np.abs(
+            roots[1] - self._class2_gaussian.mean
+        )
+        return roots[0] if dist1 < dist2 else roots[1]
 
-        return np.roots([a, b, c])
+    def check_decision_boundary(self, X):
+        projected = np.array([self._project(x) for x in X])
+        point = self.solve()
+        return np.array([1 if x > point else 0 for x in projected])
 
     def plot_gaussians(self):
         """Plots the gaussians for each class"""
@@ -153,8 +166,9 @@ class FischersLinearDiscriminant:
         plt.hist(plot1, bins=100, alpha=0.5, label="Class M")
         plt.hist(plot2, bins=100, alpha=0.5, label="Class B")
         # show decision boundary point
+        print(self.solve())
         plt.plot(
-            [self.solve()[1]] * 100,
+            [self.solve()] * 100,
             np.linspace(0, 400000, 100),
             "black",
             label="Decision Boundary",
