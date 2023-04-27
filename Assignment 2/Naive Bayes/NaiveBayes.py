@@ -84,8 +84,15 @@ class NaiveBayes:
 
     def accuracy(self, data: pd.DataFrame):
         predictions = self.predict(data)
-        correct = 0
+        labels = self.data[self.target].unique()
+        tp,tn,fp,fn = 0,0,0,0
         for index, row in data.iterrows():
-            if row[self.target] == predictions[index]:
-                correct += 1
-        return correct / len(data)
+            if row[self.target] == predictions[index] and row[self.target] == labels[0]:
+                tp += 1
+            if row[self.target] != predictions[index] and row[self.target] == labels[0]:
+                fp += 1
+            if row[self.target] == predictions[index] and row[self.target] == labels[1]:
+                tn += 1
+            if row[self.target] != predictions[index] and row[self.target] == labels[1]:
+                fn += 1
+        return tp,tn,fp,fn
