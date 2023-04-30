@@ -16,17 +16,22 @@ class Distribution:
         if self.conditionals.get((attribute, value)) is None:
             return None
         return self.conditionals[(attribute, value)]
+    
+    def getPrior(self):
+        return self.prior
 
 
 class NaiveBayes:
-    def __init__(self, data: pd.DataFrame, target: str):
+    def __init__(self, data: pd.DataFrame, target: str,smoothing: bool = True):
         self.data = data
+        self.smoothing = smoothing
         self.target = target
         self.distributions = dict()
         self.attributes = list(data.columns)
         self.attributes.remove(target)
         self.labels = list(data[target].unique())
         self._train()
+        
 
     def _train(self, alpha: float = 1e-10):
         # Calculate priors
@@ -38,18 +43,26 @@ class NaiveBayes:
         for label in self.labels:
             for attribute in self.attributes:
                 for value in self.data[attribute].unique():
-                    probability = (
-                        len(
-                            self.data[
-                                (self.data[attribute] == value)
-                                & (self.data[self.target] == label)
-                            ]
+                    if self.smoothing:
+                        probability = (
+                            len(
+                                self.data[
+                                    (self.data[attribute] == value)
+                                    & (self.data[self.target] == label)
+                                ]
+                            )
+                            + alpha
+                        ) / (
+                            len(self.data[self.data[self.target] == label])
+                            + alpha * len(self.attributes)
                         )
-                        + alpha
-                    ) / (
-                        len(self.data[self.data[self.target] == label])
-                        + alpha * len(self.attributes)
-                    )
+                    else:
+                        probability = len(
+                                self.data[
+                                    (self.data[attribute] == value)
+                                    & (self.data[self.target] == label)
+                                ]
+                            )/len(self.data[self.data[self.target] == label])
                     self.distributions[label].add_conditional(
                         attribute, value, probability
                     )
@@ -68,10 +81,13 @@ class NaiveBayes:
                         )
                         is None
                     ):
-                        posterior *= 1 / (
-                            len(self.data[self.data[self.target] == label])
-                            + len(self.attributes)
-                        )
+                        if self.smoothing:
+                            posterior *= 1 / (
+                                len(self.data[self.data[self.target] == label])
+                                + len(self.attributes)
+                            )
+                        else:
+                            posterior *=1
                     else:
                         posterior *= self.distributions[label].get_conditional(
                             attribute, row[attribute]
